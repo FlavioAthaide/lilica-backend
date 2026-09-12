@@ -18,10 +18,10 @@ CORS(app)
 # CONFIGURAÇÃO DO BANCO — credenciais do Railway
 # =====================================================
 DB_CONFIG = {
-    "host":     os.environ.get("MYSQLHOST",     "mysql.railway.internal"),
-    "port":     int(os.environ.get("MYSQLPORT",  3306)),
-    "user":     os.environ.get("MYSQLUSER",     "root"),
-    "password": os.environ.get("MYSQLPASSWORD", "DVwqBOGXCkDPuWFvLKuZtymmfxilWcIX"),
+    "host":     os.environ.get("MYSQLHOST"),
+    "port":     int(os.environ.get("MYSQLPORT", 3306)),
+    "user":     os.environ.get("MYSQLUSER"),
+    "password": os.environ.get("MYSQLPASSWORD"),
     "database": os.environ.get("MYSQLDATABASE", "railway")
 }
 
