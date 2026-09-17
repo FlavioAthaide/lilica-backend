@@ -3,10 +3,13 @@
 LILICA VENDAS — Backend Flask + MySQL (Railway)
 =======================================================
 """
+
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import mysql.connector
-import bcrypt
+import hashlib
+import hmac
+import os as _os
 import jwt
 import os
 import logging
@@ -60,13 +63,23 @@ def conectar():
 # SEGURANÇA — bcrypt para senhas
 # ─────────────────────────────────────────────────────
 def hash_senha(senha):
-    """Gera hash bcrypt da senha (mais seguro que SHA-256)"""
-    return bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    """Gera hash PBKDF2-SHA256 da senha com salt aleatório"""
+    salt = _os.urandom(32)
+    key = hashlib.pbkdf2_hmac('sha256', senha.encode('utf-8'), salt, 310000)
+    return salt.hex() + ':' + key.hex()
 
 def verificar_senha(senha, hash_salvo):
     """Verifica se a senha bate com o hash salvo"""
     try:
-        return bcrypt.checkpw(senha.encode('utf-8'), hash_salvo.encode('utf-8'))
+        # Suporte a hashes bcrypt antigos (começam com $2b$)
+        if hash_salvo.startswith('$2b$') or hash_salvo.startswith('$2a$'):
+            import bcrypt as _bcrypt
+            return _bcrypt.checkpw(senha.encode('utf-8'), hash_salvo.encode('utf-8'))
+        # Hash novo no formato salt:key
+        salt_hex, key_hex = hash_salvo.split(':')
+        salt = bytes.fromhex(salt_hex)
+        key = hashlib.pbkdf2_hmac('sha256', senha.encode('utf-8'), salt, 310000)
+        return hmac.compare_digest(key.hex(), key_hex)
     except Exception:
         return False
 
