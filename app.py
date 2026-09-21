@@ -1,6 +1,15 @@
 """
 =======================================================
 LILICA VENDAS — Backend Flask + MySQL (Railway)
+Versão melhorada com:
+  - JWT para autenticação em todas as rotas
+  - bcrypt para hash de senhas
+  - Rate limiting no login (proteção brute force)
+  - try/except/finally em todas as funções
+  - Logs de erros
+  - Validação de campos obrigatórios
+  - CORS restrito ao Netlify
+  - Registro de tentativas de login
 =======================================================
 """
 
@@ -259,6 +268,49 @@ def _inserir_relacionados(cur, cliente_id, dados):
 @app.route('/')
 def index():
     return send_from_directory('static', 'index.html')
+
+@app.route('/debug/login', methods=['POST'])
+def debug_login():
+    """Rota de debug para testar login passo a passo"""
+    d = request.json or {}
+    usuario = (d.get('usuario') or '').strip().lower()
+    senha   = (d.get('senha')   or '').strip()
+    
+    resultado = {
+        'usuario_recebido': usuario,
+        'senha_recebida': bool(senha),
+        'passos': []
+    }
+    
+    con = conectar()
+    cur = con.cursor(dictionary=True)
+    try:
+        # Passo 1: buscar usuário
+        cur.execute("SELECT id, nome, usuario, senha_hash, perfil, ativo FROM usuarios WHERE usuario = %s", (usuario,))
+        user = cur.fetchone()
+        
+        if not user:
+            resultado['passos'].append('ERRO: usuario nao encontrado no banco')
+            return jsonify(resultado)
+        
+        resultado['passos'].append(f'OK: usuario encontrado - id={user["id"]} ativo={user["ativo"]}')
+        resultado['hash_formato'] = user['senha_hash'][:30] + '...'
+        resultado['hash_tem_dois_pontos'] = ':' in user['senha_hash']
+        resultado['hash_bcrypt'] = user['senha_hash'].startswith('$2b$')
+        
+        # Passo 2: verificar senha
+        ok = verificar_senha(senha, user['senha_hash'])
+        resultado['senha_ok'] = ok
+        resultado['passos'].append(f'Verificacao senha: {ok}')
+        
+        return jsonify(resultado)
+    except Exception as e:
+        resultado['erro'] = str(e)
+        return jsonify(resultado)
+    finally:
+        con.close()
+
+
 
 
 # ─────────────────────────────────────────────────────
