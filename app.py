@@ -1,15 +1,6 @@
 """
 =======================================================
 LILICA VENDAS — Backend Flask + MySQL (Railway)
-Versão melhorada com:
-  - JWT para autenticação em todas as rotas
-  - bcrypt para hash de senhas
-  - Rate limiting no login (proteção brute force)
-  - try/except/finally em todas as funções
-  - Logs de erros
-  - Validação de campos obrigatórios
-  - CORS restrito ao Netlify
-  - Registro de tentativas de login
 =======================================================
 """
 
